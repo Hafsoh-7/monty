@@ -1,45 +1,48 @@
 #include "monty.h"
-bus_t bus = {NULL, NULL, NULL, 0};
 /**
-* main - monty code interpreter
-* @argc: number of arguments
-* @argv: monty file location
-* Return: 0 on success
-*/
+ * make_struct - Set values for struct.
+ * @argv: Argument list.
+ * Return: Struct for buffers.
+ */
+buf_struct *make_struct(char *argv[])
+{
+	static buf_struct a;
+
+	a.argv = argv;
+	memset(a.read_buff, 0, sizeof(a.read_buff));
+	memset(a.list_cmd, 0, sizeof(a.list_cmd));
+	memset(a.tok_cmd, 0, sizeof(a.tok_cmd));
+
+	return (&a);
+}
+/**
+ * main - Takes argument list and executes file given.
+ * @argc: Argument count.
+ * @argv: List of arguments.
+ * Return: 0.
+ */
 int main(int argc, char *argv[])
 {
-	char *content;
-	FILE *file;
-	size_t size = 0;
-	ssize_t read_line = 1;
-	stack_t *stack = NULL;
-	unsigned int counter = 0;
+	int fd;
+	buf_struct *a;
+
+	a = make_struct(argv);
 
 	if (argc != 2)
 	{
 		fprintf(stderr, "USAGE: monty file\n");
 		exit(EXIT_FAILURE);
 	}
-	file = fopen(argv[1], "r");
-	bus.file = file;
-	if (!file)
+	while ((fd = open(argv[1], O_RDONLY)) == -1)
 	{
 		fprintf(stderr, "Error: Can't open file %s\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
-	while (read_line > 0)
-	{
-		content = NULL;
-		read_line = getline(&content, &size, file);
-		bus.content = content;
-		counter++;
-		if (read_line > 0)
-		{
-			execute(content, &stack, counter, file);
-		}
-		free(content);
-	}
-	free_stack(stack);
-	fclose(file);
-return (0);
+
+	read(fd, a->read_buff, 4096);
+	close(fd);
+	split_newline(a);
+	exec_loop(a);
+
+	return (0);
 }
